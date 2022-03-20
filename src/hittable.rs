@@ -1,35 +1,35 @@
 use crate::ray::Ray;
 use glam::Vec3;
+use crate::material::Material;
 
-#[derive(Clone, Debug)]
-pub struct HitRecord {
+#[derive(Clone)]
+pub struct HitRecord<'a> {
     pub p: Vec3,
     pub normal: Vec3,
     pub t: f32,
-    pub front_face: bool
+    pub front_face: bool,
+    pub material: Option<&'a dyn Material>
 }
 
-impl HitRecord {
-    pub fn new() -> HitRecord {
+impl<'a> HitRecord<'a> {
+    pub fn new() -> HitRecord<'a> {
         HitRecord {
             p: Vec3::new(0.0, 0.0, 0.0),
             normal: Vec3::new(0.0, 0.0, 0.0),
             t: 0.0,
-            front_face: false
-
+            front_face: false,
+            material: None
         }
     }
 
     pub fn set_face_normal(&mut self, ray: &Ray, outward_normal: &Vec3) {
-        self.front_face = ray.direction.dot(outward_normal.clone()) < 0.0;
-        self.normal = if self.front_face { outward_normal.clone() } else { -outward_normal.clone() };
+        self.front_face = ray.direction.dot(*outward_normal) < 0.0;
+        self.normal = if self.front_face { *outward_normal } else { -(*outward_normal) };
     }
 }
 
 pub trait Hittable {
-    fn hit(&self, ray: &Ray, t_min: f32, t_max: f32, record: &mut HitRecord) -> bool {
-        return false;
-    }
+    fn hit(&self, ray: &Ray, t_min: f32, t_max: f32) -> Option<HitRecord>;
 }
 
 pub struct HittableList {
@@ -49,20 +49,17 @@ impl HittableList {
 }
 
 impl Hittable for HittableList {
-    fn hit(&self, ray: &Ray, t_min: f32, t_max: f32, record: &mut HitRecord) -> bool {
-        let mut temp_record = HitRecord::new();
-        
-        let mut hit_anything = false;
+    fn hit(&self, ray: &Ray, t_min: f32, t_max: f32) -> Option<HitRecord> {
+        let mut hit_anything = None;
         let mut closest_t = t_max;
 
         for object in self.objects.iter() {
-            if object.hit(ray, t_min, closest_t, &mut temp_record) {
-                hit_anything = true;
-                closest_t = temp_record.t;
-                *record = temp_record.clone();
+            if let Some(hit) = object.hit(ray, t_min, closest_t) {
+                closest_t = hit.t;
+                hit_anything = Some(hit);
             }
         }
 
-        return hit_anything;
+        hit_anything
     }
 }

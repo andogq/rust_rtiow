@@ -2,16 +2,18 @@ use crate::hittable::{
     Hittable,
     HitRecord
 };
+use crate::material::Material;
 use glam::Vec3;
 
-pub struct Sphere {
+pub struct Sphere<M: Material> {
     pub center: Vec3,
     pub radius: f32,
+    pub material: M
 }
 
-impl Hittable for Sphere {
-    fn hit(&self, ray: &crate::ray::Ray, t_min: f32, t_max: f32, record: &mut HitRecord) -> bool {
-        let oc = ray.origin - self.center.clone();
+impl<M: Material> Hittable for Sphere<M> {
+    fn hit(&self, ray: &crate::ray::Ray, t_min: f32, t_max: f32) -> Option<HitRecord> {
+        let oc = ray.origin - self.center;
 
         let a = ray.direction.length_squared();
         let b = oc.dot(ray.direction);
@@ -20,7 +22,7 @@ impl Hittable for Sphere {
         let discriminant: f32 = (b * b) - (a * c);
 
         if discriminant < 0.0 {
-            return false;
+            None
         } else {
             let mut root = (-b - discriminant.sqrt()) / a;
 
@@ -28,15 +30,17 @@ impl Hittable for Sphere {
                 root = (-b + discriminant.sqrt()) / a;
 
                 if root < t_min || root > t_max {
-                    return false;
+                    return None;
                 }
             }
 
-            record.t = root;
-            record.p = ray.at(record.t);
-            record.set_face_normal(ray, &((record.p - self.center) / self.radius));
+            let mut hit = HitRecord::new();
+            hit.t = root;
+            hit.p = ray.at(hit.t);
+            hit.set_face_normal(ray, &((hit.p - self.center) / self.radius));
+            hit.material = Some(&self.material);
 
-            return true;
+            Some(hit)
         }
     }
 }
