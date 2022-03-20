@@ -208,8 +208,8 @@ fn main() {
     const ASPECT_RATIO: f32 = 16.0 / 9.0;
     const IMAGE_HEIGHT: usize = 540;
     const IMAGE_WIDTH: usize = (ASPECT_RATIO * (IMAGE_HEIGHT as f32)) as usize;
-    const SAMPLES_PER_PIXEL: usize = 5;
-    const MAX_DEPTH: usize = 200;
+    const SAMPLES_PER_PIXEL: usize = 20;
+    const MAX_DEPTH: usize = 100;
 
     // World
     let world = random_scene();
